@@ -1,0 +1,3 @@
+[submodule "TeensyRoomLighting/lib/TeensyOS"]
+	path = TeensyRoomLighting/lib/TeensyOS
+	url = git@github.com:william-redenbaugh/TeensyOS.git
