@@ -1,25 +1,14 @@
 #include <Arduino.h>
-
-#include <WS2812Serial.h>
-
-// default number of matrix_leds. 
-const int num_matrix_led = 520;
-// Default GPIO value. 
-uint8_t led_matrix_gpio = 1;
-
-byte matrix_drawing_memory[num_matrix_led*3];         //  3 bytes per LED for RGB
-DMAMEM byte matrix_display_memory[num_matrix_led*12]; // 12 bytes per LED for RGB
-
-WS2812Serial matrix_leds = WS2812Serial(num_matrix_led, matrix_display_memory, matrix_drawing_memory, led_matrix_gpio, WS2812_GRBW);
+#include "led_strip_runtime.hpp"
+#include "MODULES/MPU6050/mpu6050_imu.h"
+#include "MODULES/PROTOCALLBACKS/teensy_coms.h"
 
 void setup() {
-  matrix_leds.begin(); 
-  matrix_leds.clear();
-  matrix_leds.show();
+  os_init();    
+  message_callbacks_begin(); 
+  start_led_strip_runtime(); 
 }
 
-int k = 0; 
-
 void loop() {
-
+  os_thread_delay_s(1); 
 }
