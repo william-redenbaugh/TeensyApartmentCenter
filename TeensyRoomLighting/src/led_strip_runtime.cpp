@@ -39,6 +39,14 @@ LEDStripAnimationData latest_led_strip_animation_data;
 OSSignal animation_change_signal; 
 
 /*!
+*   @brief Current animation colors
+*   @note Helps define current animation color theme
+*/
+static HsvColor current_primary_color =  {85, 255, 255}; 
+static HsvColor current_secondary_color = {170, 255, 255}; 
+static HsvColor current_tertiary_color = {0, 255, 255}; 
+
+/*!
 *   @brief Helper and setup function declarations. 
 */
 void start_led_strip_runtime(void); 
@@ -47,6 +55,10 @@ static void led_message_callback(MessageReq *msg_req);
 static void init_strip(void); 
 static inline bool animation_changed(uint32_t ms); 
 static void set_entire_strip(uint8_t r, uint8_t g, uint8_t b, uint8_t w); 
+static inline void set_strip_hsv_helper(void); 
+static inline void decrement_strip_hsv_helper(void); 
+static inline void latest_animation_convert_hsv(void); 
+
 
 /*!
 *   @brief Animation function declarations
@@ -105,10 +117,11 @@ static void led_strip_thread(void *parameters){
     memset(hsv_helper_arr, 0, sizeof(hsv_helper_arr)); 
     memset(&latest_led_strip_animation_data, 0, sizeof(latest_led_strip_animation_data)); 
 
+    latest_led_strip_animation_data.strip_animation_enum = LEDStripAnimationData_StripAniamtionType_KNIGHT_RIDDER_RANDOM;
     // Goes on to work on the next animation
     for(;;)
-        ani_list[(uint16_t)latest_led_strip_animation_data.strip_animation_enum](); 
-
+        ani_list[(uint16_t)latest_led_strip_animation_data.strip_animation_enum]();
+    
 }
 
 /*!
@@ -150,35 +163,91 @@ static void set_entire_strip(uint8_t r, uint8_t g, uint8_t b, uint8_t w){
 }
 
 /*!
-*   @brief  Helper function that deals with twinkle
-*   @note   Helper functions that deals with 
+*   @brief Set's the entire strip to whatever is in the hsv helper HsvColor buffer
+*/
+static inline void set_strip_hsv_helper(void){
+    for(int n = 0; n < LED_STRIP_NUM_LEDS; n++){
+        RgbColor col = HsvToRgb(hsv_helper_arr[n]); 
+        strip_leds.setPixelColor(n, col.r, col.g, col.b, 0); 
+    }
+}
+
+/*!
+*   @brief Goes through the entire strip HsvColor buffer and decrements the value by 15 until zero. 
+*/
+static inline void decrement_strip_hsv_helper(void){
+    for(int n = 0; n < LED_STRIP_NUM_LEDS; n++)
+        if(hsv_helper_arr[n].v >= 15)
+            hsv_helper_arr[n].v -= 15; 
+}
+
+/*!
+*   @brief Converts the latest animation data and saves in the current theme colors(in hsv bitspace)
+*/
+static inline void latest_animation_convert_hsv(void){
+    RgbColor primary_rgb = {(uint8_t)latest_led_strip_animation_data.primary_color.r, 
+                                (uint8_t)latest_led_strip_animation_data.primary_color.b, 
+                                (uint8_t)latest_led_strip_animation_data.primary_color.b};
+    
+    current_primary_color = RgbToHsv(primary_rgb); 
+
+    RgbColor secondary_rgb= {(uint8_t)latest_led_strip_animation_data.secondary_color.r, 
+                                (uint8_t)latest_led_strip_animation_data.secondary_color.b, 
+                                (uint8_t)latest_led_strip_animation_data.secondary_color.b};
+
+    current_secondary_color = RgbToHsv(secondary_rgb); 
+
+    RgbColor tertiary_rgb = {(uint8_t)latest_led_strip_animation_data.tertiary_color.r, 
+                                (uint8_t)latest_led_strip_animation_data.tertiary_color.b, 
+                                (uint8_t)latest_led_strip_animation_data.tertiary_color.b};
+    current_tertiary_color = RgbToHsv(tertiary_rgb); 
+}
+
+/*!
+*   @brief  Twinkle random animation function
+*   @note   Exits whenever the animation_changed flag changes.  
 */
 static void twinkle_random(void){
     for(;;){
-        for(int n = 0; n < LED_STRIP_NUM_LEDS; n++){
-            RgbColor col = HsvToRgb(hsv_helper_arr[n]); 
-            strip_leds.setPixelColor(n, col.r, col.g, col.b, 0); 
-        }
+        
+        set_strip_hsv_helper(); 
 
         for(int n = 0; n < (LED_STRIP_NUM_LEDS/173) + 1; n++)
             hsv_helper_arr[random(LED_STRIP_NUM_LEDS)] = {random(255), 255, 255};
 
-        for(int n = 0; n < LED_STRIP_NUM_LEDS; n++)
-            if(hsv_helper_arr[n].v >= 15)
-                hsv_helper_arr[n].v -= 15; 
+        decrement_strip_hsv_helper(); 
 
         strip_leds.show(); 
-        if(animation_changed(15))
+        
+        if(animation_changed(30))
             return; 
     }    
 }
 
+/*!
+*   @brief  Twinke animation function
+*   @note   Exits whenever the animation_changed flag changes.  
+*/
 static void twinkle(void){
+    latest_animation_convert_hsv(); 
+
+    for(;;){
+        set_strip_hsv_helper(); 
+        for(int n = 0; n < (LED_STRIP_NUM_LEDS / 920) + 1; n++){
+            hsv_helper_arr[random(LED_STRIP_NUM_LEDS)] = {current_primary_color.h, current_primary_color.s, current_primary_color.v}; 
+            hsv_helper_arr[random(LED_STRIP_NUM_LEDS)] = {current_secondary_color.h, current_secondary_color.s, current_secondary_color.v}; 
+            hsv_helper_arr[random(LED_STRIP_NUM_LEDS)] = {current_tertiary_color.h, current_tertiary_color.s, current_tertiary_color.v}; 
+        }
+        decrement_strip_hsv_helper(); 
+        strip_leds.show(); 
+        if(animation_changed(30))
+            return; 
+    }
 
 }
 
 static void fade(void){
-
+    
 }
 
 static void fade_random(void){
@@ -206,7 +275,22 @@ static void knight_ridder(void){
 }
 
 static void knight_ridder_random(void){
+    uint8_t current_hue = 0; 
+    
+    for(;;){
+        decrement_strip_hsv_helper();
 
+        int pos = beatsin16(1, 0, LED_STRIP_NUM_LEDS -1); 
+
+        hsv_helper_arr[pos] = {current_hue, 255, 255}; 
+        current_hue++; 
+
+        set_strip_hsv_helper();
+
+        strip_leds.show();
+        if(animation_changed(15))
+            return;
+    }
 }
 
 static void rainbow_glitter(void){

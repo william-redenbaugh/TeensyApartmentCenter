@@ -21,6 +21,9 @@
 // Protomessage Unpacking stuff 
 #include "protomessage_unpack.h"
 
+// FastLED libraries to help with rgb animations
+#include "FastLED.h"
+
 /*!
 *   @brief Number of leds in our strip. 
 */
