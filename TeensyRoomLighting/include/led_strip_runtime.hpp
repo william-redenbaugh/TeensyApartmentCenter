@@ -18,16 +18,10 @@
 // HSV RGB Stuff
 #include "hsv_rgb_conv.hpp"
 
-// Protomessage Unpacking stuff 
-#include "protomessage_unpack.h"
-
-// FastLED libraries to help with rgb animations
-#include "FastLED.h"
-
 /*!
 *   @brief Number of leds in our strip. 
 */
-const int LED_STRIP_NUM_LEDS = 520;
+const int LED_STRIP_NUM_LEDS = 488; 
 
 /*!
 *   @brief Which GPIO pin we are using
