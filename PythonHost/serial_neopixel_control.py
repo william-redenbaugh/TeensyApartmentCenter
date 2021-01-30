@@ -1,4 +1,5 @@
 import serial 
+import colorsys
 
 class NeopixelSerialControl: 
     def __init__(self, port, num_leds): 
@@ -31,7 +32,7 @@ class NeopixelSerialControl:
         self.led_arr[6 + n*3] = b
 
     
-class NeopixelArrayControl:
+class NeopixelMatrix:
     def __init__(self, neopixel_control_obj, width, len): 
         self.neopixel_control_obj = neopixel_control_obj
         self.width = width
@@ -39,7 +40,35 @@ class NeopixelArrayControl:
     
     # Sets the pixel of the matrix. 
     def set_pixel(self, x, y, r, g, b): 
-        n = 5
+        if(y % 2 == 0): 
+            pos = (self.width * y + x)
+            self.neopixel_control_obj.set_pixel(pos, r, g, b)
+        else: 
+            pos = self.width * y + (self.width - 1 - x)
+            self.neopixel_control_obj.set_pixel(pos, r, g, b)
+
+    def set_pixel_hsv(self, x, y, h, s, v):
+        hue = h
+        if hue > 255:
+            hue = 255
+        if hue < 0:
+            hue = 0
+        saturation = s
+        if saturation > 255:
+            saturation = 255
+        if saturation < 0:
+            saturation = 0
+        value = v
+        if value > 255:
+            value = 255
+        if value < 0:
+            value = 0
+
+        r, g, b = colorsys.hsv_to_rgb(hue/256, saturation/256, value/256)
+        r = int(r * 256)
+        g = int(g * 256)
+        b = int(b * 256)
+        self.set_pixel(x, y, r, g, b)
 
     #  Forward the update command.
     def update(self): 
